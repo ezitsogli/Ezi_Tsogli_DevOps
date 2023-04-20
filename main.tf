@@ -1,4 +1,4 @@
-// Tags
+
 locals {
   tags = {
     owner       = var.tag_department
