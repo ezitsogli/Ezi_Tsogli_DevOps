@@ -73,3 +73,88 @@ resource "azurerm_machine_learning_workspace" "mlw" {
   }
 }
 
+
+
+// Cosmos DB
+
+
+resource "azurerm_cosmosdb_account" "db" {
+  name                = "${var.class_name}-${var.student_name}-${var.environment}-${random_integer.deployment_id_suffix.result}-cosmos"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  offer_type          = "Standard"
+  kind                = "MongoDB"
+
+  enable_automatic_failover = true
+
+  capabilities {
+    name = "EnableAggregationPipeline"
+  }
+
+  capabilities {
+    name = "mongoEnableDocLevelTTL"
+  }
+
+  capabilities {
+    name = "MongoDBv3.4"
+  }
+
+  capabilities {
+    name = "EnableMongo"
+  }
+
+  consistency_policy {
+    consistency_level       = "BoundedStaleness"
+    max_interval_in_seconds = 300
+    max_staleness_prefix    = 100000
+  }
+
+  geo_location {
+    location          = "eastus"
+    failover_priority = 1
+  }
+
+  geo_location {
+    location          = "westus"
+    failover_priority = 0
+  }
+
+  tags = local.tags
+}
+
+
+//  Azure functions
+
+
+
+resource "azurerm_app_service_plan" "asp" {
+  name                = "${var.class_name}-${var.student_name}-${var.environment}-${random_integer.deployment_id_suffix.result}-asp"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  sku {
+    tier = "Standard"
+    size = "S1"
+  }
+}
+
+resource "azurerm_function_app" "func" {
+  name                       = "${var.class_name}-${var.student_name}-${var.environment}-${random_integer.deployment_id_suffix.result}-func"
+  location                   = azurerm_resource_group.rg.location
+  resource_group_name        = azurerm_resource_group.rg.name
+  app_service_plan_id        = azurerm_app_service_plan.asp.id
+  storage_account_name       = azurerm_storage_account.storage.name
+  storage_account_access_key = azurerm_storage_account.storage.primary_access_key
+}
+
+// Virtual desk
+
+
+resource "azurerm_virtual_desktop_workspace" "vdws" {
+  name                = "${var.class_name}-${var.student_name}-${var.environment}-${random_integer.deployment_id_suffix.result}-vdws"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  friendly_name = "FriendlyName"
+  description   = "A description of my workspace"
+}
